@@ -4,5 +4,5 @@ export const isContractVerified = async (address: string): Promise<boolean> => {
     )
     const data = await response.json()
 
-    return data.result !== 'Contr act source code not verified'
+    return data.message === 'NOTOK' && data.result !== 'Contract source code not verified'
 }

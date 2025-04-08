@@ -29,6 +29,7 @@ export class DetectionService {
         })
     }
 
+    // we're testing multiple hypotheses, narrowing down on the potential sandwich transactions
     private static async detectMevRequest(request: DetectionRequest): Promise<boolean> {
         const { trace } = request
 
