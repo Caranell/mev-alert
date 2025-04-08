@@ -1,16 +1,7 @@
+import { isContractVerified } from '@/helpers/etherscan.helper'
+
 import { DetectionRequest, DetectionResponse } from './dtos'
 import { flattenTraceCalls } from './utils'
-
-/**
- * DetectionService
- *
- * Implements a `detect` method that receives an enriched view of an
- * EVM compatible transaction (i.e. `DetectionRequest`)
- * and returns a `DetectionResponse`
- *
- * API Reference:
- * https://github.com/ironblocks/venn-custom-detection/blob/master/docs/requests-responses.docs.md
- */
 
 const UNISWAP_SWAP_V2_SIGNATURE = '0x022c0d9f'
 const UNISWAP_SWAP_V3_SIGNATURE = '0x128acb08'
@@ -26,10 +17,6 @@ export const SWAP_SIGNATURES = [
 ]
 
 export class DetectionService {
-    /**
-     * Update this implementation code to insepct the `DetectionRequest`
-     * based on your custom business logic
-     */
     public static async detect(request: DetectionRequest): Promise<DetectionResponse> {
         const detected = await this.detectMevRequest(request)
 
@@ -37,6 +24,7 @@ export class DetectionService {
             request,
             detectionInfo: {
                 detected,
+                message: detected ? 'Possible sandwich attack detected' : 'No MEV detected',
             },
         })
     }
@@ -71,7 +59,7 @@ export class DetectionService {
         // MEV bots never verify their contracts. On the contrary, DeFi protocols' contracts are usually verified
         // P.S. Calling etherscan API takes ~700ms, this check can be ommited if considered too slow
         if (process.env.ETHERSCAN_API_KEY) {
-            const isVerified = await this.isContractVerified(trace.from)
+            const isVerified = await isContractVerified(trace.from)
 
             if (isVerified) {
                 return false
@@ -79,14 +67,5 @@ export class DetectionService {
         }
 
         return true
-    }
-
-    private static async isContractVerified(address: string): Promise<boolean> {
-        const response = await fetch(
-            `https://api.etherscan.io/api?module=contract&action=getabi&address=${address}&apikey=${process.env.ETHERSCAN_API_KEY}`,
-        )
-        const data = await response.json()
-
-        return data.result !== 'Contract source code not verified'
     }
 }
