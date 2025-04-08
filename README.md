@@ -6,75 +6,36 @@
 ![ESLint](https://img.shields.io/badge/ESLint-4B3263?style=for-the-badge&logo=eslint&logoColor=white)
 ![Yarn](https://img.shields.io/badge/yarn-%232C8EBB.svg?style=for-the-badge&logo=yarn&logoColor=white)
 
-# Venn Custom Detector boilerplate
-A boilerplate for getting started with Venn as a Security Provider. Use is as a starting point to build your own custom detectors on Venn Network.
+# Venn MEV custom detector
 
-> 📚 [What is Venn?](https://docs.venn.build/)
+This project implements a custom detector designed to identify potential MEV activities, specifically focusing on sandwich attacks
+
+[What is a sandwich attack](https://trustwallet.com/blog/security/what-are-sandwich-attacks-in-defi)
+
+**Detection Logic:**
+
+The detection service (`src/modules/detection-module/service.ts`) analyzes transaction traces based on several heuristics:
+
+1. **EOA wallet call to contract, which triggers internal calls** Sandwich transactions, as well as other types of MEV, require creating custom smart contracts. In sandwiches, contracts should be able to trade tokens using different DEX pools
+2.  **Presence of Swaps:** Detecor checks if the transaction trace contains calls to known swap functions (e.g., Uniswap V2/V3/V4, 1inch V5).
+3.  **Tokens Flow:** Detector verifies, that the transaction is not just a sophisticatedly-routed swap, by checking that no tokens traded are returned to original contract caller (it's a common practice among MEV bots as it allows to save a lot of gas by not transferring tokens back to the 'owner' and keeping them inside contract)
+4.  **Contract Verification (Optional):** If an `ETHERSCAN_API_KEY` is provided, it checks if the supposed MEV contract is verified on Etherscan. MEV bots ony use unverified contracts, whereas DeFi protocols usually verify theirs.
+
+A transaction is flagged as a potential sandwich attack only if all of the aforementioned heuristics apply to it.
+
+_P.S. This detector focuses on sanwich attacks, but most of these checks can be used for detecting other types of mev_
 
 ## Table of Contents
-- [Introduction](#venn-custom-detector-boilerplate)
-- [Quick Start](#quick-start)
-- [What's inside?](#-whats-inside)
 - [Local development:](#️-local-development)
 - [Deploy to production](#-deploy-to-production)
 
-## ✨ Quick start
-1. Clone or fork this repo and install dependencies using `yarn install` _(or `npm install`)_
-2. Find the detection service under: `src/modules/detection-module/service.ts`
+## Example transactions
 
-    ```ts
-    import { DetectionResponse, DetectionRequest } from './dtos'
-
-    /**
-     * DetectionService
-     *
-     * Implements a `detect` method that receives an enriched view of an
-     * EVM compatible transaction (i.e. `DetectionRequest`)
-     * and returns a `DetectionResponse`
-     *
-     * API Reference:
-     * https://github.com/ironblocks/venn-custom-detection/blob/master/docs/requests-responses.docs.md
-     */
-    export class DetectionService {
-        /**
-         * Update this implementation code to insepct the `DetectionRequest`
-         * based on your custom business logic
-         */
-        public static detect(request: DetectionRequest): DetectionResponse {
-            
-            /**
-             * For this "Hello World" style boilerplate
-             * we're mocking detection results using
-             * some random value
-             */
-            const detectionResult = Math.random() < 0.5;
-
-
-            /**
-             * Wrap our response in a `DetectionResponse` object
-             */
-            return new DetectionResponse({
-                request,
-                detectionInfo: {
-                    detected: detectionResult,
-                },
-            });
-        }
-    }
-    ```
-
-3. Implement your own logic in the `detect` method
-4. Run `yarn dev` _(or `npm run dev`)_
-5. That's it! Your custom detector service is now ready to inspect transaction
-
-## 📦 What's inside?
-This boilerplate is built using `Express.js`, and written in `TypeScript` using `NodeJS`.  
-You can use it as-is by adding your own security logic to it, or as a reference point when using a different programming language.
-
-**Notes on the API**
-1. Your detector will get a `DetectionRequest`, and is expected to respond with a `DetectionResponse`
-
-See our [API Reference](https://github.com/ironblocks/venn-custom-detection/blob/master/docs/requests-responses.docs.md) for more information.
+Transactions from known MEV bots that can be used to trigger the detector:
+  - https://etherscan.io/tx/0xf69e27bafd0c63b57fa7620e7f0254449112512fd0d60980bde56a199ec1569f
+  - https://etherscan.io/tx/0xe43c09e4521e09a8cfb197d301581c4f118203a54199d28a720f7a5aee51ee96
+  - https://etherscan.io/tx/0x2f073bcb335c0d50dd901d93201b5ce9257d15b2882f2624003dd4c3d59351b8
+  - https://etherscan.io/tx/0x962601a08d650fd8eb66fd4391af3993fad6babd201c1198a255b6ad5fa1bbbe
 
 ## 🛠️ Local Development
 
@@ -86,6 +47,7 @@ Create a `.env` file with:
 PORT=3000
 HOST=localhost
 LOG_LEVEL=debug
+ETHERSCAN_API_KEY=YOUR_ETHERSCAN_API_KEY
 ```
 
 **Runing In Dev Mode**

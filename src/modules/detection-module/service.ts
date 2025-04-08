@@ -7,6 +7,7 @@ const UNISWAP_SWAP_V2_SIGNATURE = '0x022c0d9f'
 const UNISWAP_SWAP_V3_SIGNATURE = '0x128acb08'
 const UNISWAP_SWAP_V4_SIGNATURE = '0xf3cd914c'
 const ONEINCH_SWAP_V5_SIGNATURE = '0x12aa3caf'
+const CURVE_EXCHANGE_SIGNATURE = '0x3df02124'
 
 // TODO: more signatures can be added for better discovery
 export const SWAP_SIGNATURES = [
@@ -14,6 +15,7 @@ export const SWAP_SIGNATURES = [
     UNISWAP_SWAP_V3_SIGNATURE,
     UNISWAP_SWAP_V4_SIGNATURE,
     ONEINCH_SWAP_V5_SIGNATURE,
+    CURVE_EXCHANGE_SIGNATURE,
 ]
 
 export class DetectionService {
